@@ -19,6 +19,14 @@ export default function App() {
   const [owner, setOwner] = useState<string>("")
   const [votingOpen, setVotingOpen] = useState<boolean>(true)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string>("")
+
+  function parseError(e: any): string {
+    if (e?.shortMessage) return e.shortMessage
+    if (e?.message) return e.message
+    return "Transaction failed"
+  }
+
 
   async function fetchCandidates() {
     const data = await readContract(config, {
@@ -54,15 +62,21 @@ export default function App() {
   }
 
   async function vote(id: number) {
-    setLoading(true)
-    await writeContract(config, {
-      address: Voting.address as `0x${string}`,
-      abi: Voting.abi,
-      functionName: "vote",
-      args: [id],
-    })
-    await refresh()
-    setLoading(false)
+    try {
+      setError("")
+      setLoading(true)
+      await writeContract(config, {
+        address: Voting.address as `0x${string}`,
+        abi: Voting.abi,
+        functionName: "vote",
+        args: [id],
+      })
+      await refresh()
+    } catch (e: any) {
+      setError(parseError(e))
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function closeVoting() {
@@ -81,8 +95,8 @@ export default function App() {
   const winner =
     candidates.length > 0
       ? candidates.reduce((prev, curr) =>
-          curr.voteCount > prev.voteCount ? curr : prev
-        )
+        curr.voteCount > prev.voteCount ? curr : prev
+      )
       : null
 
   return (
@@ -182,6 +196,12 @@ export default function App() {
             </div>
           ))}
       </div>
+      {error && (
+        <div className="bg-red-900 border border-red-500 text-red-200 p-4 mb-6 rounded">
+          ⚠️ {error}
+        </div>
+      )}
+
     </div>
   )
 }
