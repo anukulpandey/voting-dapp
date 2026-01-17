@@ -17,6 +17,7 @@ export default function App() {
 
   const [candidates, setCandidates] = useState<Candidate[]>([])
   const [owner, setOwner] = useState<string>("")
+  const [votingOpen, setVotingOpen] = useState<boolean>(true)
   const [loading, setLoading] = useState(false)
 
   async function fetchCandidates() {
@@ -37,6 +38,15 @@ export default function App() {
     setOwner(data as string)
   }
 
+  async function fetchVotingStatus() {
+    const data = await readContract(config, {
+      address: Voting.address as `0x${string}`,
+      abi: Voting.abi,
+      functionName: "votingOpen",
+    })
+    setVotingOpen(data as boolean)
+  }
+
   async function vote(id: number) {
     setLoading(true)
     await writeContract(config, {
@@ -45,7 +55,7 @@ export default function App() {
       functionName: "vote",
       args: [id],
     })
-    await fetchCandidates()
+    await refresh()
     setLoading(false)
   }
 
@@ -55,13 +65,25 @@ export default function App() {
       abi: Voting.abi,
       functionName: "closeVoting",
     })
-    alert("Voting Closed Successfully")
+    await refresh()
+  }
+
+  async function refresh() {
+    await fetchCandidates()
+    await fetchOwner()
+    await fetchVotingStatus()
   }
 
   useEffect(() => {
-    fetchCandidates()
-    fetchOwner()
+    refresh()
   }, [])
+
+  const winner =
+    candidates.length > 0
+      ? candidates.reduce((prev, curr) =>
+          curr.voteCount > prev.voteCount ? curr : prev
+        )
+      : null
 
   return (
     <div style={{ padding: 30 }}>
@@ -80,7 +102,7 @@ export default function App() {
 
       <hr />
 
-      {isConnected && owner.toLowerCase() === address?.toLowerCase() && (
+      {isConnected && owner.toLowerCase() === address?.toLowerCase() && votingOpen && (
         <button
           style={{ background: "crimson", color: "white", marginBottom: 15 }}
           onClick={closeVoting}
@@ -89,18 +111,43 @@ export default function App() {
         </button>
       )}
 
-      {candidates.map((c, i) => (
-        <div key={i} style={{ marginBottom: 10 }}>
-          <b>{c.name}</b> — Votes: {Number(c.voteCount)}
-          <button
-            style={{ marginLeft: 10 }}
-            disabled={!isConnected || loading}
-            onClick={() => vote(i)}
-          >
-            Vote
-          </button>
-        </div>
-      ))}
+      {!votingOpen && winner && (
+        <>
+          <h3>🏁 Voting Ended</h3>
+          <h4>Winner: {winner.name}</h4>
+
+          <table border={1} cellPadding={8}>
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Votes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {candidates.map((c, i) => (
+                <tr key={i}>
+                  <td>{c.name}</td>
+                  <td>{Number(c.voteCount)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
+      {votingOpen &&
+        candidates.map((c, i) => (
+          <div key={i} style={{ marginBottom: 10 }}>
+            <b>{c.name}</b> — Votes: {Number(c.voteCount)}
+            <button
+              style={{ marginLeft: 10 }}
+              disabled={!isConnected || loading}
+              onClick={() => vote(i)}
+            >
+              Vote
+            </button>
+          </div>
+        ))}
     </div>
   )
 }
