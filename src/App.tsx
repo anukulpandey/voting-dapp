@@ -16,40 +16,51 @@ export default function App() {
   const { disconnect } = useDisconnect()
 
   const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [owner, setOwner] = useState<string>("")
   const [loading, setLoading] = useState(false)
 
   async function fetchCandidates() {
-    try {
-      const data = await readContract(config, {
-        address: Voting.address as `0x${string}`,
-        abi: Voting.abi,
-        functionName: "getAllCandidates",
-      })
-      setCandidates(data as Candidate[])
-    } catch (err) {
-      console.error("Read error:", err)
-    }
+    const data = await readContract(config, {
+      address: Voting.address as `0x${string}`,
+      abi: Voting.abi,
+      functionName: "getAllCandidates",
+    })
+    setCandidates(data as Candidate[])
+  }
+
+  async function fetchOwner() {
+    const data = await readContract(config, {
+      address: Voting.address as `0x${string}`,
+      abi: Voting.abi,
+      functionName: "owner",
+    })
+    setOwner(data as string)
   }
 
   async function vote(id: number) {
-    try {
-      setLoading(true)
-      await writeContract(config, {
-        address: Voting.address as `0x${string}`,
-        abi: Voting.abi,
-        functionName: "vote",
-        args: [id],
-      })
-      await fetchCandidates()
-    } catch (err) {
-      console.error("Vote failed:", err)
-    } finally {
-      setLoading(false)
-    }
+    setLoading(true)
+    await writeContract(config, {
+      address: Voting.address as `0x${string}`,
+      abi: Voting.abi,
+      functionName: "vote",
+      args: [id],
+    })
+    await fetchCandidates()
+    setLoading(false)
+  }
+
+  async function closeVoting() {
+    await writeContract(config, {
+      address: Voting.address as `0x${string}`,
+      abi: Voting.abi,
+      functionName: "closeVoting",
+    })
+    alert("Voting Closed Successfully")
   }
 
   useEffect(() => {
     fetchCandidates()
+    fetchOwner()
   }, [])
 
   return (
@@ -68,6 +79,15 @@ export default function App() {
       )}
 
       <hr />
+
+      {isConnected && owner.toLowerCase() === address?.toLowerCase() && (
+        <button
+          style={{ background: "crimson", color: "white", marginBottom: 15 }}
+          onClick={closeVoting}
+        >
+          Close Voting (Admin)
+        </button>
+      )}
 
       {candidates.map((c, i) => (
         <div key={i} style={{ marginBottom: 10 }}>
