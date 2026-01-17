@@ -1,0 +1,10 @@
+npm create vite@latest voting-frontend -- --template react-ts
+cd voting-frontend
+
+npm install wagmi viem
+npm run dev
+
+install foundry
+
+curl -L https://foundry.paradigm.xyz | bash
+foundryup

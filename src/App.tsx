@@ -1,35 +1,86 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react"
+import { useAccount, useConnect, useDisconnect } from "wagmi"
+import { injected } from "wagmi/connectors"
+import { readContract, writeContract } from "@wagmi/core"
+import Voting from "./Voting.json"
+import { config } from "./wagmi"
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+type Candidate = {
+  name: string
+  voteCount: bigint
 }
 
-export default App
+export default function App() {
+  const { address, isConnected } = useAccount()
+  const { connect } = useConnect()
+  const { disconnect } = useDisconnect()
+
+  const [candidates, setCandidates] = useState<Candidate[]>([])
+  const [loading, setLoading] = useState(false)
+
+  async function fetchCandidates() {
+    try {
+      const data = await readContract(config, {
+        address: Voting.address as `0x${string}`,
+        abi: Voting.abi,
+        functionName: "getAllCandidates",
+      })
+      setCandidates(data as Candidate[])
+    } catch (err) {
+      console.error("Read error:", err)
+    }
+  }
+
+  async function vote(id: number) {
+    try {
+      setLoading(true)
+      await writeContract(config, {
+        address: Voting.address as `0x${string}`,
+        abi: Voting.abi,
+        functionName: "vote",
+        args: [id],
+      })
+      await fetchCandidates()
+    } catch (err) {
+      console.error("Vote failed:", err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchCandidates()
+  }, [])
+
+  return (
+    <div style={{ padding: 30 }}>
+      <h2>DAO Voting (Local Anvil)</h2>
+
+      {!isConnected ? (
+        <button onClick={() => connect({ connector: injected() })}>
+          Connect Wallet
+        </button>
+      ) : (
+        <div>
+          <p>Connected: {address}</p>
+          <button onClick={disconnect as any}>Disconnect</button>
+        </div>
+      )}
+
+      <hr />
+
+      {candidates.map((c, i) => (
+        <div key={i} style={{ marginBottom: 10 }}>
+          <b>{c.name}</b> — Votes: {Number(c.voteCount)}
+          <button
+            style={{ marginLeft: 10 }}
+            disabled={!isConnected || loading}
+            onClick={() => vote(i)}
+          >
+            Vote
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+}
