@@ -90,13 +90,13 @@ export default function App() {
 
       {/* Top Bar */}
       <div className="flex justify-between items-center p-6">
-        <h1 className="text-xl font-bold text-orange-500">
+        <h1 className="text-xl font-bold text-red-500">
           Voting DApp – GDG
         </h1>
         {isConnected && (
           <button
             onClick={disconnect as any}
-            className="border border-orange-500 px-4 py-2 rounded hover:bg-orange-500 hover:text-black"
+            className="border border-red-500 px-4 py-2 rounded hover:bg-red-500 hover:text-black"
           >
             Disconnect
           </button>
@@ -104,18 +104,18 @@ export default function App() {
       </div>
 
       {/* Hero */}
-      <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-gradient-to-r from-orange-600 to-red-700">
+      <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-gradient-to-r from-red-600 to-red-700">
         <h2 className="text-5xl font-extrabold mb-4">
           Decentralized Voting System
         </h2>
-        <p className="max-w-2xl text-lg text-orange-100">
+        <p className="max-w-2xl text-lg text-red-100">
           Trustless. Transparent. On-Chain Governance for the Future of DAOs.
         </p>
 
         {!isConnected && (
           <button
             onClick={() => connect({ connector: injected() })}
-            className="mt-8 bg-black text-orange-400 px-8 py-3 rounded-lg font-semibold hover:bg-gray-900"
+            className="mt-8 bg-black text-red-400 px-8 py-3 rounded-lg font-semibold hover:bg-gray-900"
           >
             Connect Wallet
           </button>
@@ -136,7 +136,7 @@ export default function App() {
 
         {!votingOpen && winner && (
           <div className="bg-gray-900 p-6 rounded-xl shadow-lg">
-            <h3 className="text-2xl font-bold text-orange-400 mb-3">
+            <h3 className="text-2xl font-bold text-red-400 mb-3">
               🏁 Voting Ended
             </h3>
             <p className="mb-4">
@@ -174,7 +174,7 @@ export default function App() {
                 <button
                   disabled={!isConnected || loading}
                   onClick={() => vote(i)}
-                  className="bg-orange-500 text-black px-4 py-2 rounded hover:bg-orange-600"
+                  className="bg-red-500 text-black px-4 py-2 rounded hover:bg-red-600"
                 >
                   Vote
                 </button>
