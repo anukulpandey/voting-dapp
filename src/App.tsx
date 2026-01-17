@@ -47,6 +47,12 @@ export default function App() {
     setVotingOpen(data as boolean)
   }
 
+  async function refresh() {
+    await fetchCandidates()
+    await fetchOwner()
+    await fetchVotingStatus()
+  }
+
   async function vote(id: number) {
     setLoading(true)
     await writeContract(config, {
@@ -68,12 +74,6 @@ export default function App() {
     await refresh()
   }
 
-  async function refresh() {
-    await fetchCandidates()
-    await fetchOwner()
-    await fetchVotingStatus()
-  }
-
   useEffect(() => {
     refresh()
   }, [])
@@ -86,68 +86,102 @@ export default function App() {
       : null
 
   return (
-    <div style={{ padding: 30 }}>
-      <h2>DAO Voting (Local Anvil)</h2>
+    <div className="min-h-screen bg-black text-white">
 
-      {!isConnected ? (
-        <button onClick={() => connect({ connector: injected() })}>
-          Connect Wallet
-        </button>
-      ) : (
-        <div>
-          <p>Connected: {address}</p>
-          <button onClick={disconnect as any}>Disconnect</button>
-        </div>
-      )}
+      {/* Top Bar */}
+      <div className="flex justify-between items-center p-6">
+        <h1 className="text-xl font-bold text-orange-500">
+          Voting DApp – GDG
+        </h1>
+        {isConnected && (
+          <button
+            onClick={disconnect as any}
+            className="border border-orange-500 px-4 py-2 rounded hover:bg-orange-500 hover:text-black"
+          >
+            Disconnect
+          </button>
+        )}
+      </div>
 
-      <hr />
+      {/* Hero */}
+      <div className="flex flex-col items-center justify-center text-center py-24 px-6 bg-gradient-to-r from-orange-600 to-red-700">
+        <h2 className="text-5xl font-extrabold mb-4">
+          Decentralized Voting System
+        </h2>
+        <p className="max-w-2xl text-lg text-orange-100">
+          Trustless. Transparent. On-Chain Governance for the Future of DAOs.
+        </p>
 
-      {isConnected && owner.toLowerCase() === address?.toLowerCase() && votingOpen && (
-        <button
-          style={{ background: "crimson", color: "white", marginBottom: 15 }}
-          onClick={closeVoting}
-        >
-          Close Voting (Admin)
-        </button>
-      )}
+        {!isConnected && (
+          <button
+            onClick={() => connect({ connector: injected() })}
+            className="mt-8 bg-black text-orange-400 px-8 py-3 rounded-lg font-semibold hover:bg-gray-900"
+          >
+            Connect Wallet
+          </button>
+        )}
+      </div>
 
-      {!votingOpen && winner && (
-        <>
-          <h3>🏁 Voting Ended</h3>
-          <h4>Winner: {winner.name}</h4>
+      {/* Content */}
+      <div className="max-w-3xl mx-auto mt-12 p-6">
 
-          <table border={1} cellPadding={8}>
-            <thead>
-              <tr>
-                <th>Candidate</th>
-                <th>Votes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((c, i) => (
-                <tr key={i}>
-                  <td>{c.name}</td>
-                  <td>{Number(c.voteCount)}</td>
+        {isConnected && owner.toLowerCase() === address?.toLowerCase() && votingOpen && (
+          <button
+            onClick={closeVoting}
+            className="bg-red-600 px-6 py-3 rounded mb-6 hover:bg-red-700"
+          >
+            Close Voting (Admin)
+          </button>
+        )}
+
+        {!votingOpen && winner && (
+          <div className="bg-gray-900 p-6 rounded-xl shadow-lg">
+            <h3 className="text-2xl font-bold text-orange-400 mb-3">
+              🏁 Voting Ended
+            </h3>
+            <p className="mb-4">
+              Winner: <span className="text-green-400">{winner.name}</span>
+            </p>
+
+            <table className="w-full border border-gray-700">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="p-3 text-left">Candidate</th>
+                  <th className="p-3 text-right">Votes</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </>
-      )}
-
-      {votingOpen &&
-        candidates.map((c, i) => (
-          <div key={i} style={{ marginBottom: 10 }}>
-            <b>{c.name}</b> — Votes: {Number(c.voteCount)}
-            <button
-              style={{ marginLeft: 10 }}
-              disabled={!isConnected || loading}
-              onClick={() => vote(i)}
-            >
-              Vote
-            </button>
+              </thead>
+              <tbody>
+                {candidates.map((c, i) => (
+                  <tr key={i} className="border-t border-gray-700">
+                    <td className="p-3">{c.name}</td>
+                    <td className="p-3 text-right">{Number(c.voteCount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
+        )}
+
+        {votingOpen &&
+          candidates.map((c, i) => (
+            <div
+              key={i}
+              className="flex justify-between items-center bg-gray-900 p-4 rounded-lg mb-3"
+            >
+              <span className="font-semibold">{c.name}</span>
+              <div className="flex items-center gap-4">
+                <span>{Number(c.voteCount)}</span>
+                <button
+                  disabled={!isConnected || loading}
+                  onClick={() => vote(i)}
+                  className="bg-orange-500 text-black px-4 py-2 rounded hover:bg-orange-600"
+                >
+                  Vote
+                </button>
+              </div>
+            </div>
+          ))}
+      </div>
     </div>
   )
 }
